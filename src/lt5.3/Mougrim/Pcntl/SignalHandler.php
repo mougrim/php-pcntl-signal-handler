@@ -34,7 +34,7 @@ class Mougrim_Pcntl_SignalHandler
 	}
 
 	/**
-	 * Начать обработку накопленных сигналов
+	 * Обработать накопленные сигналы
 	 */
 	public function dispatch()
 	{

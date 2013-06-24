@@ -11,6 +11,7 @@ class SignalHandler
 	 * @var callable[]
 	 */
 	private $handlers = array();
+	private $toDispatch = array();
 
 	/**
 	 * Добавление обработчика сигнала
@@ -28,26 +29,34 @@ class SignalHandler
 
 		if(empty($this->handlers[$signalNumber]) && function_exists('pcntl_signal'))
 		{
+			$this->toDispatch[$signalNumber] = false;
 			pcntl_signal($signalNumber, array($this, 'handleSignal'));
 		}
 	}
 
 	/**
-	 * Начать обработку накопленных сигналов
+	 * Обработать накопленные сигналы
 	 */
 	public function dispatch()
 	{
 		pcntl_signal_dispatch();
+		foreach($this->toDispatch as $signalNumber => $isNeedDispatch)
+		{
+			if(!$isNeedDispatch)
+				continue;
+			$this->toDispatch[$signalNumber] = false;
+			foreach($this->handlers[$signalNumber] as $handler)
+				call_user_func($handler, $signalNumber);
+		}
 	}
 
 	/**
-	 * Обработка сигнала
+	 * Поставнока обработки сигнала в очередь
 	 *
 	 * @param int $signalNumber номер сигнала, например SIGTERM
 	 */
 	private function handleSignal($signalNumber)
 	{
-		foreach($this->handlers[$signalNumber] as $handler)
-			call_user_func($handler, $signalNumber);
+		$this->toDispatch[$signalNumber] = true;
 	}
 }
