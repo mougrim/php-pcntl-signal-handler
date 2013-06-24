@@ -4,7 +4,7 @@ php-pcntl-signal-handler
 Для версии php меньше чем 5.3
 --------------------
 Помимо описанного выше класс Mougrim_Pcntl_SignalHandler эмулирует <a href="http://php.net/pcntl_signal_dispatch" target="_blank">pcntl_signal_dispatch()</a>, которая досупна только с версии php 5.3.0
-Входной файл signalExmpleRun.php:
+Входной файл signalExampleRun.php:
 ```php
 <?php
 // в начале подключаем SignalHandler, что бы был вызван declare(ticks = 1);
@@ -31,12 +31,16 @@ class SignalExample
 	{
 		// добавляем обработчик сигнала SIGTERM
 		$this->signalHandler->addHandler(SIGTERM, array($this, 'terminate'));
+		// добавляем обработчик сигнала SIGINT
+		$this->signalHandler->addHandler(SIGINT, array($this, 'terminate'));
 
 		while(true)
 		{
 			$this->signalHandler->dispatch();
 
 			// итерация цикла
+			echo "итерация цикла\n";
+			usleep(300000);
 		}
 	}
 
@@ -44,6 +48,7 @@ class SignalExample
 	{
 		// послать SIGTERM детям
 		// ...
+		echo "terminate\n";
 
 		exit(0);
 	}
@@ -52,21 +57,21 @@ class SignalExample
 
 Для версии php больше либо равно 5.3
 --------------------
-Входной файл signalExmpleRun.php:
+Входной файл signalExampleRun53.php:
 ```php
 <?php
-require_once dirname(__FILE__) . "/SignalExample.php";;
-// Подключить SignalHandler можно в любом месте программы, например путем автозагрузки
+// в начале подключаем SignalHandler, что бы был вызван declare(ticks = 1);
 require_once dirname(__FILE__) . "/src/gte5.3/Mougrim/Pcntl/SignalHandler.php";
+require_once dirname(__FILE__) . "/SignalExample53.php";;
 $signalHandler = new \Mougrim\Pcntl\SignalHandler();
-$signalExample = new SignalExample($signalHandler);
+$signalExample = new SignalExample53($signalHandler);
 $signalExample->run();
 ```
 
-Файл SignalExample.php:
+Файл SignalExample53.php:
 ```php
 <?php
-class SignalExample
+class SignalExample53
 {
 	private $signalHandler;
 
@@ -79,12 +84,16 @@ class SignalExample
 	{
 		// добавляем обработчик сигнала SIGTERM
 		$this->signalHandler->addHandler(SIGTERM, array($this, 'terminate'));
+		// добавляем обработчик сигнала SIGINT
+		$this->signalHandler->addHandler(SIGINT, array($this, 'terminate'));
 
 		while(true)
 		{
 			$this->signalHandler->dispatch();
 
 			// итерация цикла
+			echo "итерация цикла\n";
+			usleep(300000);
 		}
 	}
 
@@ -92,6 +101,7 @@ class SignalExample
 	{
 		// послать SIGTERM детям
 		// ...
+		echo "terminate\n";
 
 		exit(0);
 	}

@@ -21,12 +21,13 @@ class Mougrim_Pcntl_SignalHandler
 	 */
 	public function addHandler($signalNumber, $handler, $isAdd = true)
 	{
+		$isHandlerNotAttached = empty($this->handlers[$signalNumber]);
 		if($isAdd)
 			$this->handlers[$signalNumber][] = $handler;
 		else
 			$this->handlers[$signalNumber] = array($handler);
 
-		if(empty($this->handlers[$signalNumber]) && function_exists('pcntl_signal'))
+		if($isHandlerNotAttached && function_exists('pcntl_signal'))
 		{
 			$this->toDispatch[$signalNumber] = false;
 			pcntl_signal($signalNumber, array($this, 'handleSignal'));
@@ -53,7 +54,7 @@ class Mougrim_Pcntl_SignalHandler
 	 *
 	 * @param int $signalNumber номер сигнала, например SIGTERM
 	 */
-	private function handleSignal($signalNumber)
+	public function handleSignal($signalNumber)
 	{
 		$this->toDispatch[$signalNumber] = true;
 	}
