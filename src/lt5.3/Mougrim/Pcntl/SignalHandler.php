@@ -35,6 +35,16 @@ class Mougrim_Pcntl_SignalHandler
 	}
 
 	/**
+	 * Очитска обработчиков для сигнала $signalNumber
+	 *
+	 * @param int $signalNumber
+	 */
+	public function clearHandlers($signalNumber)
+	{
+		$this->handlers[$signalNumber] = array();
+	}
+
+	/**
 	 * Обработать накопленные сигналы
 	 */
 	public function dispatch()
