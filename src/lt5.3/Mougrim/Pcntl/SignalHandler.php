@@ -6,9 +6,9 @@ declare(ticks = 1);
  */
 class Mougrim_Pcntl_SignalHandler
 {
-	private $handlersStack = array();
+	private $handlersStack   = array();
 	private $toDispatchStack = array();
-	private $stackLevels = array();
+	private $stackLevels     = array();
 
 	/**
 	 * Добавление обработчика сигнала
@@ -28,11 +28,14 @@ class Mougrim_Pcntl_SignalHandler
 		else
 			$this->handlersStack[$signalNumber][$signalStackLevel] = array($handler);
 
-		if($isHandlerNotAttached && function_exists('pcntl_signal'))
-		{
+		if(
+			!array_key_exists($signalNumber, $this->toDispatchStack) ||
+			!array_key_exists($signalStackLevel, $this->toDispatchStack[$signalNumber])
+		)
 			$this->toDispatchStack[$signalNumber][$signalStackLevel] = false;
+
+		if($isHandlerNotAttached)
 			pcntl_signal($signalNumber, array($this, 'handleSignal'));
-		}
 	}
 
 	/**
@@ -42,8 +45,15 @@ class Mougrim_Pcntl_SignalHandler
 	 */
 	public function clearHandlers($signalNumber)
 	{
-		if(array_key_exists($signalNumber, $this->handlersStack))
-			$this->handlersStack[$signalNumber][$this->getStackLevel($signalNumber)] = array();
+		$currentLevel = $this->getStackLevel($signalNumber);
+		unset($this->handlersStack[$signalNumber][$currentLevel]);
+		unset($this->toDispatchStack[$signalNumber][$currentLevel]);
+		if(empty($this->handlersStack[$signalNumber]))
+		{
+			unset($this->handlersStack[$signalNumber]);
+			unset($this->toDispatchStack[$signalNumber]);
+			$this->setDefaultHandler($signalNumber);
+		}
 	}
 
 	/**
@@ -56,7 +66,8 @@ class Mougrim_Pcntl_SignalHandler
 	{
 		$nextLevel = $this->getStackLevel($signalNumber) + 1;
 		$this->setStackLevel($signalNumber, $nextLevel);
-		$this->toDispatchStack[$signalNumber][$nextLevel] = false;
+		if(array_key_exists($signalNumber, $this->toDispatchStack))
+			$this->toDispatchStack[$signalNumber][$nextLevel] = false;
 	}
 
 	/**
@@ -66,10 +77,62 @@ class Mougrim_Pcntl_SignalHandler
 	 */
 	public function previousStackLevel($signalNumber)
 	{
-		$currentLevel = $this->getStackLevel($signalNumber);
-		unset($this->toDispatchStack[$signalNumber][$currentLevel]);
-		unset($this->handlersStack[$signalNumber][$currentLevel]);
-		$this->setStackLevel($signalNumber, $currentLevel - 1);
+		$this->clearHandlers($signalNumber);
+		$this->setStackLevel($signalNumber, $this->getStackLevel($signalNumber) - 1);
+	}
+
+	/**
+	 * Восстановить обработчик по умолчанию для сигнала $signalNumber
+	 *
+	 * @param integer $signalNumber
+	 *
+	 * @throws Mougrim_Pcntl_SignalHandler_Exception
+	 */
+	public function setDefaultHandler($signalNumber)
+	{
+		if(!$this->canSetDefaultOrIgnoreHandler($signalNumber))
+			throw new Mougrim_Pcntl_SignalHandler_Exception("Can`t set default handler for signal {$signalNumber} because stack level greate than zero: {$this->getStackLevel($signalNumber)}");
+		$this->clearHandlers($signalNumber);
+		pcntl_signal($signalNumber, SIG_DFL);
+	}
+
+	/**
+	 * Игнорировать сигнал $signalNumber
+	 *
+	 * @param integer $signalNumber
+	 *
+	 * @throws Mougrim_Pcntl_SignalHandler_Exception
+	 */
+	public function setIgnoreHandler($signalNumber)
+	{
+		if(!$this->canSetDefaultOrIgnoreHandler($signalNumber))
+			throw new Mougrim_Pcntl_SignalHandler_Exception("Can`t set ingnore handler for signal {$signalNumber} because stack level greate than zero: {$this->getStackLevel($signalNumber)}");
+		$this->clearHandlers($signalNumber);
+		pcntl_signal($signalNumber, SIG_IGN);
+	}
+
+	/**
+	 * Возможно ли установить обработчик по умолчанию для сигнала $signalNumber или игнорировать его
+	 *
+	 * @param int $signalNumber
+	 *
+	 * @return bool
+	 */
+	public function canSetDefaultOrIgnoreHandler($signalNumber)
+	{
+		return $this->getStackLevel($signalNumber) === 0;
+	}
+
+	/**
+	 * Установлен ли обработчик на сигнал $signalNumber
+	 *
+	 * @param int $signalNumber
+	 *
+	 * @return bool
+	 */
+	public function haveHandlers($signalNumber)
+	{
+		return !empty($this->handlersStack[$signalNumber]);
 	}
 
 	/**
