@@ -46,6 +46,9 @@ class SignalHandler
 	 */
 	public function clearHandlers($signalNumber)
 	{
+		// WORKAROUND for recursion bag
+		if(empty($this->handlersStack[$signalNumber]))
+			return;
 		$currentLevel = $this->getStackLevel($signalNumber);
 		unset($this->handlersStack[$signalNumber][$currentLevel]);
 		unset($this->toDispatchStack[$signalNumber][$currentLevel]);
