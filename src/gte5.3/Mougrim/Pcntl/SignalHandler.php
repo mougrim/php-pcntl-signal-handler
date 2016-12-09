@@ -16,7 +16,7 @@ class SignalHandler
 	 *
 	 * @param int       $signalNumber   номер сигнала, например SIGTERM
 	 * @param callable  $handler        функция-обработчик игнала $signalNumber
-	 * @param bool      $isAdd          если true, то заменить текущие обработчики
+	 * @param bool      $isAdd          если true, то добавить обработчик к текущим
 	 */
 	public function addHandler($signalNumber, $handler, $isAdd = true)
 	{
